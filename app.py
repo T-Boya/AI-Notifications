@@ -103,21 +103,13 @@ def get_most_recent_topics():
         return doc.to_dict()  # Return the document's data
     return None  # No data found for the current time slot
 
-# @app.route('/get-topics/<time>', methods=['GET'])
-# def get_topics(time):
-#     today = datetime.now(eastern).strftime("%Y-%m-%d")
-#     doc = db.collection('topics').document(f"{today}-{time}").get()
-#     if doc.exists:
-#         return jsonify(doc.to_dict())
-#     return jsonify({"message": "No topics found for this time slot"}), 404
-
 @app.route('/send-notification', methods=['GET'])
 def send_pushcut_notification():
     # Fetch data from Firestore
     recent_doc = get_most_recent_topics()
 
     if recent_doc:
-        topics = recent_doc.to_dict().get("topics", [])
+        topics = recent_doc.get("topics", [])
         # Format the topics as plain text
         message = "\n".join([f"{i+1}. {t['topic']}: {t['details']}" for i, t in enumerate(topics)])
     else:
