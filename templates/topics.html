@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ time_slot.capitalize() }} Topics - {{ date }}</title>
+    <title>Topics - {{ date }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -29,7 +29,7 @@
     </style>
 </head>
 <body>
-    <h1>{{ time_slot.capitalize() }} Topics for {{ date }}</h1>
+    <h1>Topics for {{ date }}</h1>
     {% if topics %}
         {% for topic in topics %}
             <div class="topic">
