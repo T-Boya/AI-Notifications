@@ -7,6 +7,7 @@ from datetime import datetime
 from openai import OpenAI
 from firebase_admin import credentials, firestore, initialize_app
 from dotenv import load_dotenv
+from pytz import timezone
 import requests
 
 # Load environment variables from .env
@@ -34,6 +35,9 @@ if not client.api_key:
 PUSHCUT_WEBHOOK_URL = os.getenv("PUSHCUT_WEBHOOK_URL")
 if not PUSHCUT_WEBHOOK_URL:
     raise ValueError("PUSHCUT_WEBHOOK_URL environment variable is not set.")
+
+# Define the time zone
+eastern = timezone('America/New_York')
 
 def generate_chatgpt_topics():
     # ChatGPT prompt to generate topics
@@ -63,7 +67,7 @@ def generate_chatgpt_topics():
 
 @app.route('/generate-topics', methods=['GET'])
 def generate_topics():
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(eastern).strftime("%Y-%m-%d")
     times = ["morning", "midday", "afternoon"]
 
     for time in times:
@@ -72,18 +76,36 @@ def generate_topics():
 
     return jsonify({"message": "Topics generated for all time slots"})
 
+def get_time_slot():
+    current_hour = datetime.now(eastern).hour
+    if 5 <= current_hour < 12:
+        return "morning"
+    elif 12 <= current_hour < 17:
+        return "afternoon"
+    else:
+        return "evening"
+
 def get_most_recent_topics():
-    topics_collection = db.collection('topics')
-    docs = topics_collection.order_by("timestamp", direction=firestore.Query.DESCENDING).limit(1).stream()
+     # Determine the time slot
+    time_slot = get_time_slot()
 
-    for doc in docs:
-        return doc.to_dict()  # Return the first (most recent) document
+    # Get today's date
+    today = datetime.now(eastern).strftime("%Y-%m-%d")
 
-    return None  # If no documents are found
+    # Construct the Firestore document ID
+    doc_id = f"{today}-{time_slot}"
+
+    # Fetch the document from Firestore
+    doc_ref = db.collection('topics').document(doc_id)
+    doc = doc_ref.get()
+
+    if doc.exists:
+        return doc.to_dict()  # Return the document's data
+    return None  # No data found for the current time slot
 
 # @app.route('/get-topics/<time>', methods=['GET'])
 # def get_topics(time):
-#     today = datetime.now().strftime("%Y-%m-%d")
+#     today = datetime.now(eastern).strftime("%Y-%m-%d")
 #     doc = db.collection('topics').document(f"{today}-{time}").get()
 #     if doc.exists:
 #         return jsonify(doc.to_dict())
@@ -131,10 +153,12 @@ def view_topics():
             error="No topics available."
         )
 
-
 # Schedule the task with APScheduler
 scheduler = BackgroundScheduler()
-scheduler.add_job(func=generate_topics, trigger="cron", hour=0)  # Run daily at midnight
+scheduler.add_job(func=generate_topics, trigger="cron", hour=0, timezone=eastern)  # Run daily at midnight
+scheduler.add_job(func=send_pushcut_notification, trigger="cron", hour=8, timezone=eastern)  # Runs at 8 AM daily
+scheduler.add_job(func=send_pushcut_notification, trigger="cron", hour=12, timezone=eastern)  # Runs at 12 PM daily
+scheduler.add_job(func=send_pushcut_notification, trigger="cron", hour=16, timezone=eastern)  # Runs at 4 PM daily
 scheduler.start()
 
 # Ensure the scheduler shuts down gracefully
