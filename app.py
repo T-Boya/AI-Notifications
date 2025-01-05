@@ -18,7 +18,6 @@ app = Flask(__name__)
 service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT")
 if not service_account_json:
     raise ValueError("FIREBASE_SERVICE_ACCOUNT environment variable is not set.")
-print(service_account_json)
 service_account_dict = json.loads(service_account_json)
 
 # Initialize Firebase Admin SDK
