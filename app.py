@@ -1,6 +1,7 @@
 import os
 import json
 from flask import Flask, jsonify
+from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
 from openai import OpenAI
 from firebase_admin import credentials, firestore, initialize_app
@@ -54,6 +55,13 @@ def generate_chatgpt_topics():
     formatted_topics = [{"topic": t.split(":")[0], "details": t.split(":")[1].strip()} for t in topics if ":" in t]
     return formatted_topics
 
+# Schedule the task with APScheduler
+scheduler = BackgroundScheduler()
+scheduler.add_job(func=generate_topics_task, trigger="cron", hour=0)  # Run daily at midnight
+scheduler.start()
+
+# Ensure the scheduler shuts down gracefully
+atexit.register(lambda: scheduler.shutdown())
 
 @app.route('/generate-topics', methods=['GET'])
 def generate_topics():
