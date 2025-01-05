@@ -1,5 +1,6 @@
 import os
 import json
+import atexit
 from flask import Flask, jsonify
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
@@ -17,6 +18,7 @@ app = Flask(__name__)
 service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT")
 if not service_account_json:
     raise ValueError("FIREBASE_SERVICE_ACCOUNT environment variable is not set.")
+print(service_account_json)
 service_account_dict = json.loads(service_account_json)
 
 # Initialize Firebase Admin SDK
@@ -55,14 +57,6 @@ def generate_chatgpt_topics():
     formatted_topics = [{"topic": t.split(":")[0], "details": t.split(":")[1].strip()} for t in topics if ":" in t]
     return formatted_topics
 
-# Schedule the task with APScheduler
-scheduler = BackgroundScheduler()
-scheduler.add_job(func=generate_topics_task, trigger="cron", hour=0)  # Run daily at midnight
-scheduler.start()
-
-# Ensure the scheduler shuts down gracefully
-atexit.register(lambda: scheduler.shutdown())
-
 @app.route('/generate-topics', methods=['GET'])
 def generate_topics():
     today = datetime.now().strftime("%Y-%m-%d")
@@ -81,6 +75,14 @@ def get_topics(time):
     if doc.exists:
         return jsonify(doc.to_dict())
     return jsonify({"message": "No topics found for this time slot"}), 404
+
+# Schedule the task with APScheduler
+scheduler = BackgroundScheduler()
+scheduler.add_job(func=generate_topics, trigger="cron", hour=0)  # Run daily at midnight
+scheduler.start()
+
+# Ensure the scheduler shuts down gracefully
+atexit.register(lambda: scheduler.shutdown())
 
 if __name__ == '__main__':
     app.run(debug=True)
