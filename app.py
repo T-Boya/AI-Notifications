@@ -7,6 +7,7 @@ from datetime import datetime
 from openai import OpenAI
 from firebase_admin import credentials, firestore, initialize_app
 from dotenv import load_dotenv
+import requests
 
 # Load environment variables from .env
 load_dotenv()
@@ -29,6 +30,12 @@ db = firestore.client()
 client = OpenAI( api_key = os.getenv("OPENAI_API_KEY") )
 if not client.api_key:
     raise ValueError("OPENAI_API_KEY environment variable is not set.")
+
+PUSHCUT_API_KEY = os.getenv("PUSHCUT_API_KEY")
+if not PUSHCUT_API_KEY:
+    raise ValueError("PUSHCUT_API_KEY environment variable is not set.")
+
+PUSHCUT_NOTIFICATION_NAME = "DailyTopics"  # Pushcut notification template name
 
 def generate_chatgpt_topics():
     # ChatGPT prompt to generate topics
@@ -74,6 +81,32 @@ def get_topics(time):
     if doc.exists:
         return jsonify(doc.to_dict())
     return jsonify({"message": "No topics found for this time slot"}), 404
+
+@app.route('/send-notification/<time_slot>', methods=['GET'])
+def send_pushcut_notification(time_slot):
+    # Fetch data from Firestore
+    today = datetime.now().strftime("%Y-%m-%d")
+    doc_ref = db.collection('topics').document(f"{today}-{time_slot}")
+    doc = doc_ref.get()
+
+    if doc.exists:
+        topics = doc.to_dict().get("topics", [])
+        # Format the topics as plain text
+        message = "\n".join([f"{i+1}. {t['topic']}: {t['details']}" for i, t in enumerate(topics)])
+    else:
+        message = "No topics available for this time slot."
+
+    # Send a Pushcut notification
+    response = requests.post(
+        f"https://api.pushcut.io/v1/notifications/{PUSHCUT_NOTIFICATION_NAME}",
+        headers={"Authorization": f"Bearer {PUSHCUT_API_KEY}"},
+        json={"text": message}  # Pushcut uses "text" for the notification body
+    )
+
+    if response.status_code == 200:
+        return jsonify({"message": "Notification sent successfully!"})
+    else:
+        return jsonify({"error": "Failed to send notification", "details": response.text}), 500
 
 # Schedule the task with APScheduler
 scheduler = BackgroundScheduler()
