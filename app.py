@@ -51,7 +51,7 @@ def generate_chatgpt_topics():
             {"role": "user", "content": prompt}
         ],
         temperature=0.7,
-        max_tokens=300
+        max_tokens=6000
     )
     print(response)
     
