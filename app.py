@@ -1,6 +1,7 @@
 import os
 import json
 import atexit
+from prompt import prompt
 from flask import Flask, jsonify, render_template
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
@@ -41,10 +42,6 @@ eastern = timezone('America/New_York')
 
 def generate_chatgpt_topics():
     # ChatGPT prompt to generate topics
-    prompt = (
-        "Generate 3 specific, conversation-friendly topics with a short explanation "
-        "that someone can use on a date. Topics should be unique and engaging."
-    )
     
     # OpenAI API call for chat models
     response = client.chat.completions.create(
