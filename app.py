@@ -53,6 +53,7 @@ def generate_chatgpt_topics():
         temperature=0.7,
         max_tokens=300
     )
+    print(response)
     
     # Extract the assistant's response
     topics_text = response.choices[0].message.content
