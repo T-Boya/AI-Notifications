@@ -89,8 +89,8 @@ def get_most_recent_topics():
 #         return jsonify(doc.to_dict())
 #     return jsonify({"message": "No topics found for this time slot"}), 404
 
-@app.route('/send-notification/<time_slot>', methods=['GET'])
-def send_pushcut_notification(time_slot):
+@app.route('/send-notification', methods=['GET'])
+def send_pushcut_notification():
     # Fetch data from Firestore
     recent_doc = get_most_recent_topics()
 
@@ -112,8 +112,8 @@ def send_pushcut_notification(time_slot):
     else:
         return jsonify({"error": "Failed to send notification", "details": response.text}), 500
 
-@app.route('/view-topics/<time_slot>', methods=['GET'])
-def view_topics(time_slot):
+@app.route('/view-topics', methods=['GET'])
+def view_topics():
     recent_doc = get_most_recent_topics()
 
     if recent_doc:
