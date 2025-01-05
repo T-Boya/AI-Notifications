@@ -31,11 +31,9 @@ client = OpenAI( api_key = os.getenv("OPENAI_API_KEY") )
 if not client.api_key:
     raise ValueError("OPENAI_API_KEY environment variable is not set.")
 
-PUSHCUT_API_KEY = os.getenv("PUSHCUT_API_KEY")
-if not PUSHCUT_API_KEY:
-    raise ValueError("PUSHCUT_API_KEY environment variable is not set.")
-
-PUSHCUT_NOTIFICATION_NAME = "DailyTopics"  # Pushcut notification template name
+PUSHCUT_WEBHOOK_URL = os.getenv("PUSHCUT_WEBHOOK_URL")
+if not PUSHCUT_WEBHOOK_URL:
+    raise ValueError("PUSHCUT_WEBHOOK_URL environment variable is not set.")
 
 def generate_chatgpt_topics():
     # ChatGPT prompt to generate topics
@@ -96,11 +94,10 @@ def send_pushcut_notification(time_slot):
     else:
         message = "No topics available for this time slot."
 
-    # Send a Pushcut notification
+    # Send the message to Pushcut using the webhook
     response = requests.post(
-        f"https://api.pushcut.io/v1/notifications/{PUSHCUT_NOTIFICATION_NAME}",
-        headers={"Authorization": f"Bearer {PUSHCUT_API_KEY}"},
-        json={"text": message}  # Pushcut uses "text" for the notification body
+        PUSHCUT_WEBHOOK_URL,
+        json={"text": message}  # The "text" field contains the notification content
     )
 
     if response.status_code == 200:
