@@ -106,22 +106,19 @@ def send_pushcut_notification():
     recent_doc = get_most_recent_topics()
 
     if recent_doc:
-        topics = recent_doc.get("topics", [])
         # Format the topics as plain text
-        message = "\n".join([f"{i+1}. {t['topic']}: {t['details']}" for i, t in enumerate(topics)])
-    else:
-        message = "No topics available for this time slot."
+        message = 'View today\'s conversation topics'
+    
+        # Send the message to Pushcut using the webhook
+        response = requests.post(
+            PUSHCUT_WEBHOOK_URL,
+            json={"text": message}  # The "text" field contains the notification content
+        )
 
-    # Send the message to Pushcut using the webhook
-    response = requests.post(
-        PUSHCUT_WEBHOOK_URL,
-        json={"text": message}  # The "text" field contains the notification content
-    )
-
-    if response.status_code == 200:
-        return jsonify({"message": "Notification sent successfully!"})
-    else:
-        return jsonify({"error": "Failed to send notification", "details": response.text}), 500
+        if response.status_code == 200:
+            return jsonify({"message": "Notification sent successfully!"})
+        else:
+            return jsonify({"error": "Failed to send notification", "details": response.text}), 500
 
 @app.route('/view-topics', methods=['GET'])
 def view_topics():
