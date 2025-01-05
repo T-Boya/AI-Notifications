@@ -41,8 +41,6 @@ if not PUSHCUT_WEBHOOK_URL:
 eastern = timezone('America/New_York')
 
 def generate_chatgpt_topics():
-    # ChatGPT prompt to generate topics
-    
     # OpenAI API call for chat models
     response = client.chat.completions.create(
         model="gpt-4o",
@@ -51,7 +49,7 @@ def generate_chatgpt_topics():
             {"role": "user", "content": prompt}
         ],
         temperature=0.7,
-        max_tokens=6000,
+        max_tokens=3000,
         timeout=30,
     )
     print(response)
