@@ -72,6 +72,15 @@ def generate_topics():
 
     return jsonify({"message": "Topics generated for all time slots"})
 
+def get_most_recent_topics():
+    topics_collection = db.collection('topics')
+    docs = topics_collection.order_by("timestamp", direction=firestore.Query.DESCENDING).limit(1).stream()
+
+    for doc in docs:
+        return doc.to_dict()  # Return the first (most recent) document
+
+    return None  # If no documents are found
+
 # @app.route('/get-topics/<time>', methods=['GET'])
 # def get_topics(time):
 #     today = datetime.now().strftime("%Y-%m-%d")
@@ -83,12 +92,10 @@ def generate_topics():
 @app.route('/send-notification/<time_slot>', methods=['GET'])
 def send_pushcut_notification(time_slot):
     # Fetch data from Firestore
-    today = datetime.now().strftime("%Y-%m-%d")
-    doc_ref = db.collection('topics').document(f"{today}-{time_slot}")
-    doc = doc_ref.get()
+    recent_doc = get_most_recent_topics()
 
-    if doc.exists:
-        topics = doc.to_dict().get("topics", [])
+    if recent_doc:
+        topics = recent_doc.to_dict().get("topics", [])
         # Format the topics as plain text
         message = "\n".join([f"{i+1}. {t['topic']}: {t['details']}" for i, t in enumerate(topics)])
     else:
@@ -107,15 +114,22 @@ def send_pushcut_notification(time_slot):
 
 @app.route('/view-topics/<time_slot>', methods=['GET'])
 def view_topics(time_slot):
-    today = datetime.now().strftime("%Y-%m-%d")
-    doc_ref = db.collection('topics').document(f"{today}-{time_slot}")
-    doc = doc_ref.get()
+    recent_doc = get_most_recent_topics()
 
-    if doc.exists:
-        topics = doc.to_dict().get("topics", [])
-        return render_template('topics.html', time_slot=time_slot, date=today, topics=topics)
+    if recent_doc:
+        return render_template(
+            'topics.html',
+            topics=recent_doc.get("topics", []),
+            date=recent_doc.get("date", "Unknown"),
+            error=None
+        )
     else:
-        return render_template('topics.html', time_slot=time_slot, date=today, topics=None, error="No topics found.")
+        return render_template(
+            'topics.html',
+            topics=None,
+            date="No recent topics found",
+            error="No topics available."
+        )
 
 
 # Schedule the task with APScheduler
