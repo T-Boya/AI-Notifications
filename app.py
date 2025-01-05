@@ -1,7 +1,7 @@
 import os
 import json
 import atexit
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
 from openai import OpenAI
@@ -72,13 +72,13 @@ def generate_topics():
 
     return jsonify({"message": "Topics generated for all time slots"})
 
-@app.route('/get-topics/<time>', methods=['GET'])
-def get_topics(time):
-    today = datetime.now().strftime("%Y-%m-%d")
-    doc = db.collection('topics').document(f"{today}-{time}").get()
-    if doc.exists:
-        return jsonify(doc.to_dict())
-    return jsonify({"message": "No topics found for this time slot"}), 404
+# @app.route('/get-topics/<time>', methods=['GET'])
+# def get_topics(time):
+#     today = datetime.now().strftime("%Y-%m-%d")
+#     doc = db.collection('topics').document(f"{today}-{time}").get()
+#     if doc.exists:
+#         return jsonify(doc.to_dict())
+#     return jsonify({"message": "No topics found for this time slot"}), 404
 
 @app.route('/send-notification/<time_slot>', methods=['GET'])
 def send_pushcut_notification(time_slot):
@@ -104,6 +104,19 @@ def send_pushcut_notification(time_slot):
         return jsonify({"message": "Notification sent successfully!"})
     else:
         return jsonify({"error": "Failed to send notification", "details": response.text}), 500
+
+@app.route('/view-topics/<time_slot>', methods=['GET'])
+def view_topics(time_slot):
+    today = datetime.now().strftime("%Y-%m-%d")
+    doc_ref = db.collection('topics').document(f"{today}-{time_slot}")
+    doc = doc_ref.get()
+
+    if doc.exists:
+        topics = doc.to_dict().get("topics", [])
+        return render_template('topics.html', time_slot=time_slot, date=today, topics=topics)
+    else:
+        return render_template('topics.html', time_slot=time_slot, date=today, topics=None, error="No topics found.")
+
 
 # Schedule the task with APScheduler
 scheduler = BackgroundScheduler()

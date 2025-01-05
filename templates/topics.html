@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ time_slot.capitalize() }} Topics - {{ date }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .topic {
+            margin-bottom: 15px;
+        }
+        .topic h3 {
+            margin: 0;
+            color: #007BFF;
+        }
+        .topic p {
+            margin: 5px 0 0;
+            color: #555;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ time_slot.capitalize() }} Topics for {{ date }}</h1>
+    {% if topics %}
+        {% for topic in topics %}
+            <div class="topic">
+                <h3>{{ topic['topic'] }}</h3>
+                <p>{{ topic['details'] }}</p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+</body>
+</html>
