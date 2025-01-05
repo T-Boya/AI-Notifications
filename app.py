@@ -81,9 +81,9 @@ def get_time_slot():
     if 5 <= current_hour < 12:
         return "morning"
     elif 12 <= current_hour < 17:
-        return "afternoon"
+        return "midday"
     else:
-        return "evening"
+        return "afternoon"
 
 def get_most_recent_topics():
      # Determine the time slot
